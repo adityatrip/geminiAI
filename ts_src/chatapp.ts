@@ -1,4 +1,4 @@
-import constFile from "./Constants.json" with { type: 'json' };
+import constFile from "../Constants.json" with { type: 'json' };
 import { GoogleGenAI } from "@google/genai";
 import readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
