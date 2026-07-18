@@ -2,6 +2,7 @@ import constFile from "../Constants.json" with { type: 'json' };
 import { GoogleGenAI } from "@google/genai";
 import readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { conversationHistory } from "./History.js"
 
 const ai = new GoogleGenAI({
     apiKey: constFile.apiKey
@@ -17,6 +18,7 @@ const runChatBot = async function() {
     try {
         const chat = ai.chats.create({
             model: constFile.modelNames[1] as string,
+            history: conversationHistory,
             config: {
                 systemInstruction: 'You are a brilliant, helpful and type-safe software engineering mentor.',
                 temperature: 0.5
@@ -43,8 +45,8 @@ const runChatBot = async function() {
 
             console.log(`Gemini: ${resp.text}`);
         }
-    } catch (err) {
-        console.log('Error while running chatBot application.', err);
+    } catch (err: any) {
+        console.log('Error while running chatBot application.', err.ApiError.error);
     } finally {
         rl.close();
     }
