@@ -8,7 +8,7 @@
   "main": "type-conversion-with-zod.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "ts": "tsx ./ts_src/HandlingImage.ts",
+    "ts": "tsx ./ts_src/Huge-Log-File-Handling/main.ts",
     "js": "node index.js"
   },
   "dependencies": {
