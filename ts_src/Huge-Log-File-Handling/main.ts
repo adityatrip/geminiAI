@@ -7,12 +7,16 @@ const ai = new GoogleGenAI({apiKey: CONSTANTS.apiKey});
 async function LogFileAnalyze() {
     try {
 
-        const content = await fs.readFile('./ts_src/Huge-Log-File-Handling/system.log', 'utf-8');
-
-        console.log('read file contents, now trying to get response from AI')
+        // const content = await fs.readFile('./ts_src/Huge-Log-File-Handling/system.log', 'utf-8');
+        const [systemLog] = await Promise.all([
+            fs.readFile('./ts_src/Huge-Log-File-Handling/system.log', 'utf-8'), 
+            fs.readFile('./ts_src/Huge-Log-File-Handling/system1.log', 'utf-8'),
+        ]);
+        console.log('read file contents, now trying to get response from AI');
+        const content = systemLog;
 
         const response = await ai.models.generateContent({
-            model: CONSTANTS.modelNames[0] as string,
+            model: CONSTANTS.modelNames[1] as string,
             contents: [
                 `You are principal Software Architect and site reliability engineer.
                 Analyze the following files together. Detect architectural anti-patterns, potential memory leaks, performance hazards and cross module bugs where logs match anomalies in code blocks.
@@ -20,7 +24,7 @@ async function LogFileAnalyze() {
                 
                 Context Files: ${content}`
             ],
-            config:{
+            config: {
                 temperature: 0.2
             }
         });
