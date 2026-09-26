@@ -1,0 +1,2 @@
+Seeding: adding some more (conversation) into the context. If I want AI agent to think a conversation has happened already, then I will fake a conversation and insert it into context of the AI agent.
+This helps AI agent to use this conversation and make decisions. Seeding is done prior to actual prompt.

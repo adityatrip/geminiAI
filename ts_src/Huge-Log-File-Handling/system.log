@@ -1,0 +1,5 @@
+[2026-07-19T02:15:01Z] [INFO] System Initialized successfully.
+[2026-07-19T02:15:05Z] [WARN] Database pool connection threshold reached 80% utilization.
+[2026-07-19T02:16:12Z] [ERROR] UnhandledPromiseRejection Detected: pg pool client query error line 12.
+[2026-07-19T02:16:12Z] [DEBUG] Memory allocation graph spikes to 892MB container ceiling.
+[2026-07-19T02:17:45Z] [CRITICAL] Garbage Collection failure: heap out of allocation metrics. Connection pool hung.
