@@ -1,0 +1,39 @@
+[2024-06-10 09:00:01] [INFO]  Server started on port 3000
+[2024-06-10 09:00:02] [WARN]  JWT_SECRET loaded from hardcoded fallback value. Set JWT_SECRET in environment variables.
+    at config/auth.js:8 — `const secret = process.env.JWT_SECRET || "mysecretkey123";`
+    -- Security/Architectural issue: Hardcoded fallback secret in source code. Leaked in repo, exploitable for token forgery.
+
+[2024-06-10 09:02:18] [ERROR] UnhandledPromiseRejectionWarning: Error: ENOENT: no such file or directory, open './uploads/avatar_null.png'
+    at fs.readFile (routes/user.js:67)
+    -- Root cause: `req.file` not validated before use. If upload fails or field is missing, `req.file.filename` is undefined.
+
+[2024-06-10 09:05:44] [WARN]  Synchronous file read detected on request thread (fs.readFileSync).
+    at middleware/logger.js:33
+    -- Architectural issue: Blocking I/O on the Node.js event loop. All concurrent requests are stalled while file is read. Use fs.readFile (async) or streams.
+
+[2024-06-10 09:08:12] [ERROR] RangeError: Maximum call stack size exceeded
+    at formatTree (utils/treeBuilder.js:22)
+    -- Root cause: Recursive function with no base case termination guard. Circular reference in data causes infinite recursion.
+
+[2024-06-10 09:11:30] [WARN]  Deprecated callback-style API used: `crypto.createCipher` (removed in Node 18).
+    at services/encryptionService.js:14
+    -- Migration needed: Replace with `crypto.createCipheriv` with explicit IV parameter.
+
+[2024-06-10 09:14:05] [ERROR] SyntaxError: Unexpected end of JSON input
+    at JSON.parse (controllers/orderController.js:45)
+    -- Root cause: `req.body` parsed without checking Content-Type. Body may be empty or plain text. Missing `express.json()` middleware on route, or client sent malformed payload.
+
+[2024-06-10 09:17:50] [WARN]  Global error handler not registered. Express app has no `app.use((err, req, res, next) => {...})` error middleware.
+    -- Architectural issue: Any thrown error in async route handlers will cause silent 500 or crash. Centralized error handling is missing entirely.
+
+[2024-06-10 09:20:33] [ERROR] TypeError: Cannot read properties of null (reading 'role')
+    at middleware/authorize.js:19 — `if (req.user.role !== 'admin')`
+    -- Root cause: JWT verification failure sets req.user to null, but downstream middleware assumes it is always populated. No null-guard after authentication middleware.
+
+[2024-06-10 09:25:00] [WARN]  CORS policy set to wildcard (*) in production environment.
+    at app.js:12 — `app.use(cors({ origin: '*' }))`
+    -- Security/Architectural issue: Wildcard CORS allows any origin to call the API with credentials. Must be restricted to known client origins in production.
+
+[2024-06-10 09:30:14] [CRITICAL] Process exiting due to uncaught exception.
+    Error: listen EADDRINUSE: address already in use :::3000
+    -- Root cause: Previous server process not cleaned up. No graceful shutdown handler (SIGTERM/SIGINT) to release port on restart.

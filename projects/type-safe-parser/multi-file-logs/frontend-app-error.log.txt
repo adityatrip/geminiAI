@@ -1,0 +1,40 @@
+[2024-06-10 08:12:03] [WARN]  No error boundary found for component tree. Unhandled promise rejection will crash the UI.
+[2024-06-10 08:12:05] [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'map')
+    at ProductList (src/components/ProductList.js:42:18)
+    at renderWithHooks (react-dom.development.js:14985)
+    at mountIndeterminateComponent (react-dom.development.js:17811)
+    -- Root cause: API response not validated before passing to component. `data` assumed to always be an array.
+
+[2024-06-10 08:14:22] [ERROR] Uncaught ReferenceError: userToken is not defined
+    at checkAuth (src/utils/auth.js:18:12)
+    at App (src/App.js:34:5)
+    -- Root cause: Variable declared with `var` inside an if-block, referenced outside scope. Classic `var` hoisting misuse.
+
+[2024-06-10 08:15:47] [WARN]  Memory leak detected. Event listener added in useEffect() but never removed on component unmount.
+    at Dashboard (src/pages/Dashboard.js:88)
+    -- Recommendation: Return a cleanup function from useEffect to call removeEventListener.
+
+[2024-06-10 08:17:01] [ERROR] Maximum update depth exceeded. This can happen when a component calls setState inside useEffect with no dependency array, causing infinite re-render loop.
+    at UserProfile (src/pages/UserProfile.js:55)
+    -- Root cause: useEffect dependency array is empty [] but state is updated inside, bypassing the guard.
+
+[2024-06-10 08:19:34] [WARN]  Global state mutation detected outside Redux reducer.
+    src/services/cartService.js:101 — `store.getState().cart.items.push(newItem)`
+    -- Architectural issue: Direct mutation of Redux store state. Reducers must return new state objects; mutations break time-travel debugging and cause silent UI inconsistencies.
+
+[2024-06-10 08:21:10] [ERROR] Unhandled Promise Rejection: NetworkError when attempting to fetch resource.
+    at fetchUserData (src/api/userApi.js:29)
+    -- Root cause: fetch() call has no .catch() handler and no try/catch in async function. Any network failure goes unhandled.
+
+[2024-06-10 08:23:55] [WARN]  Performance: Re-rendering entire list (2,400 items) on every keypress in search input.
+    at SearchableTable (src/components/SearchableTable.js:77)
+    -- Architectural issue: Filtering logic runs synchronously on the main thread without debounce or memoization (useMemo/useCallback missing).
+
+[2024-06-10 08:26:41] [ERROR] JSON.parse SyntaxError: Unexpected token < in JSON at position 0
+    at parseResponse (src/utils/http.js:14)
+    -- Root cause: Server returned HTML error page (likely 500) but code assumed JSON. No content-type check before parse.
+
+[2024-06-10 08:30:00] [CRITICAL] Application crashed. Unhandled exception propagated to window.onerror.
+    -- Last known state: user navigating to /checkout
+    -- Stack: TypeError: null is not an object (evaluating 'document.getElementById("payment-form").submit')
+    -- Root cause: DOM element assumed to always exist. No null-guard before .submit() call.

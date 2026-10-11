@@ -1,0 +1,44 @@
+[2024-06-10 09:00:05] [WARN]  Slow query detected (execution time: 14,320 ms)
+    Query: SELECT * FROM orders WHERE customer_name LIKE '%john%'
+    -- Issue: Leading wildcard in LIKE pattern prevents index usage. Full table scan on 3.2M rows. 
+    -- Fix: Use FULLTEXT index and MATCH...AGAINST, or restructure query to avoid leading wildcard.
+
+[2024-06-10 09:03:22] [ERROR] MySQL Error 1064: You have an error in your SQL syntax near 'WHERE user_id = 105 DELETE FROM sessions'
+    at db/sessionRepository.js:58
+    -- Root cause: String concatenation used to build query. Malformed SQL from unsanitized input reached the server.
+    -- Architectural issue: Raw string interpolation instead of parameterized queries. High SQL injection risk.
+
+[2024-06-10 09:07:45] [WARN]  N+1 query pattern detected. 87 individual SELECT queries issued within single request lifecycle.
+    Triggered by: GET /api/products (controllers/productController.js:34)
+    -- Architectural issue: Each product fetches its category in a separate query inside a loop. 
+    -- Fix: Use a single JOIN query or implement batch loading (DataLoader pattern).
+
+[2024-06-10 09:11:10] [ERROR] MySQL Error 1205: Lock wait timeout exceeded; try restarting transaction
+    Transaction: UPDATE inventory SET stock = stock - ? WHERE product_id = ?
+    -- Root cause: Long-running transaction holding row lock for 52 seconds. No transaction timeout set.
+    -- Architectural issue: Transaction boundary too wide — includes external HTTP call inside transaction block, blocking other writers.
+
+[2024-06-10 09:15:33] [WARN]  Missing index on foreign key column detected.
+    Table: `order_items`, Column: `product_id` references `products(id)`
+    -- Architectural issue: Foreign key defined without corresponding index. JOIN operations and ON DELETE CASCADE will cause full table scans.
+    -- Fix: CREATE INDEX idx_order_items_product_id ON order_items(product_id);
+
+[2024-06-10 09:18:47] [ERROR] MySQL Error 1366: Incorrect integer value: '' for column 'user_id' at row 1
+    Query: INSERT INTO audit_log (user_id, action, timestamp) VALUES ('', 'LOGIN', NOW())
+    -- Root cause: Empty string passed for integer column. Input not validated or cast before insert.
+
+[2024-06-10 09:22:14] [WARN]  SELECT * used in production query — fetching 42 columns, only 3 used by application.
+    Query: SELECT * FROM users JOIN profiles ON users.id = profiles.user_id WHERE users.id = ?
+    -- Architectural issue: Over-fetching columns wastes network bandwidth and memory. Select only needed columns explicitly.
+
+[2024-06-10 09:26:01] [ERROR] MySQL Error 1452: Cannot add or update a child row: a foreign key constraint fails (`appdb`.`orders`, CONSTRAINT `fk_orders_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`))
+    -- Root cause: Application attempted to insert an order for a user_id that does not exist in the users table.
+    -- Architectural issue: No application-level existence check before insert. Relying solely on DB constraint for data integrity without user-friendly error handling.
+
+[2024-06-10 09:29:55] [WARN]  Transactions not used for multi-step writes. Two related INSERT statements executed independently.
+    at db/checkoutRepository.js:90-102
+    -- Architectural issue: If second INSERT fails, first INSERT leaves orphaned data with no rollback. Violates atomicity. Must wrap both in a BEGIN / COMMIT block.
+
+[2024-06-10 09:34:00] [CRITICAL] MySQL connection pool exhausted. All 10 connections in use. New requests queued.
+    -- Root cause: Connections not released after query completion. Missing `connection.release()` in error code paths.
+    -- Architectural issue: Connection lifecycle not managed correctly. Pool sizing also never tuned from default (10). 
