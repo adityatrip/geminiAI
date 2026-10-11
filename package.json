@@ -9,11 +9,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "ts": "tsx ./ts_src/Huge-Log-File-Handling/main.ts",
+    "pr1": "tsx ./projects/type-safe-parser/main.ts",
     "js": "node index.js"
   },
   "dependencies": {
     "@google/genai": "^2.10.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "chalk": "4.1.2",
     "js-tiktoken": "^1.0.21",
     "zod": "^4.4.3"
   },

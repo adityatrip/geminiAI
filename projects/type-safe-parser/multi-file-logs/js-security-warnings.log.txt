@@ -1,0 +1,52 @@
+[2024-06-10 12:00:00] [WARN]  Sensitive data exposed in console.log statements found across 14 files.
+    src/services/authService.js:22   — console.log('User login:', user.email, user.passwordHash)
+    src/api/paymentApi.js:45         — console.log('Payment payload:', JSON.stringify(payload))
+    src/utils/tokenHelper.js:11      — console.log('Generated token:', token)
+    -- Security issue: Credentials and tokens written to stdout/log aggregators in plaintext.
+
+[2024-06-10 12:03:40] [ERROR] XSS vulnerability: User-supplied content rendered without sanitization.
+    at src/components/CommentList.js:67
+    `<div dangerouslySetInnerHTML={{ __html: comment.body }} />`
+    -- Code issue: `dangerouslySetInnerHTML` used with raw, unsanitized user input. Any comment containing `<script>` executes in victim's browser.
+    -- Fix: Sanitize with DOMPurify before passing to innerHTML.
+
+[2024-06-10 12:07:15] [WARN]  API key hardcoded in client-side JavaScript bundle.
+    src/config/apiConfig.js:5
+    `export const GOOGLE_MAPS_KEY = "AIzaSyXXXXXXXXXXXXXXXXXXXXX";`
+    -- Security/Architectural issue: Secret key shipped in public JS bundle. Visible to anyone via browser DevTools.
+    -- Fix: Proxy API calls through backend. Never embed secret keys in frontend code.
+
+[2024-06-10 12:10:55] [ERROR] Insecure Direct Object Reference (IDOR) vulnerability.
+    GET /api/invoices/:id — no ownership check.
+    at src/routes/invoiceRoutes.js:28
+    `const invoice = await Invoice.findById(req.params.id);`
+    -- Architectural issue: Any authenticated user can access any invoice by guessing the ID. No check that `invoice.userId === req.user.id`.
+
+[2024-06-10 12:15:22] [WARN]  Prototype pollution risk: `Object.assign({}, userInput)` used with unvalidated nested objects.
+    at src/utils/configMerger.js:19
+    -- Code issue: Malicious payload `{"__proto__": {"isAdmin": true}}` would pollute Object prototype. Use `JSON.parse(JSON.stringify(...))` or a safe merge library.
+
+[2024-06-10 12:19:00] [ERROR] eval() used to execute dynamic query string.
+    at src/utils/ruleEngine.js:88
+    `const result = eval(rule.expression);`
+    -- Security/Code issue: `eval()` executes arbitrary JavaScript. If `rule.expression` originates from user input or database (which can be tampered), this is Remote Code Execution.
+    -- Fix: Replace with a sandboxed expression evaluator (e.g., `expr-eval`, `jsep`).
+
+[2024-06-10 12:22:45] [WARN]  Cookie set without HttpOnly and Secure flags.
+    at src/middleware/session.js:14
+    `res.cookie('session_id', token, { maxAge: 86400000 })`
+    -- Security issue: Missing `httpOnly: true` makes cookie accessible to JavaScript (XSS-stealable). Missing `secure: true` allows transmission over HTTP.
+
+[2024-06-10 12:26:10] [ERROR] Path traversal vulnerability in file download endpoint.
+    GET /api/files/download?name=../../etc/passwd
+    at src/routes/fileRoutes.js:37
+    `const filePath = path.join(__dirname, 'uploads', req.query.name);`
+    -- Security/Code issue: User-supplied filename not sanitized. Attacker can traverse directories to read arbitrary server files.
+    -- Fix: Use `path.basename(req.query.name)` and validate against allowed directory.
+
+[2024-06-10 12:30:00] [CRITICAL] npm audit: 3 critical vulnerabilities found in dependency tree.
+    - lodash@4.17.15        CVE-2021-23337  Prototype Pollution (Critical)
+    - axios@0.19.2          CVE-2020-28168  SSRF via redirect (High)
+    - jsonwebtoken@8.5.1    CVE-2022-23529  Remote code execution via malformed key (Critical)
+    -- Action required: Run `npm audit fix` and update pinned versions in package-lock.json.
+    -- Architectural issue: No automated dependency scanning (Dependabot / Snyk) configured in CI pipeline.

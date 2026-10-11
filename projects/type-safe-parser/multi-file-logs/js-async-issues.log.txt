@@ -1,0 +1,49 @@
+[2024-06-10 10:00:00] [WARN]  Mixed async patterns detected across codebase.
+    -- Files using callbacks: src/legacy/dataFetcher.js, src/utils/fileParser.js
+    -- Files using Promises: src/api/*.js
+    -- Files using async/await: src/services/*.js
+    -- Architectural issue: Inconsistent async strategy makes error propagation unpredictable. Callback errors swallowed silently in Promise chains.
+
+[2024-06-10 10:02:45] [ERROR] UnhandledPromiseRejection: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at Promise.all (src/startup/initServices.js:22)
+    -- Root cause: `Promise.all()` used for independent service init. One failure rejects the entire batch and skips initialization of other services.
+    -- Fix: Use `Promise.allSettled()` and handle each result individually.
+
+[2024-06-10 10:06:13] [WARN]  Async function returns value but caller does not await it.
+    at src/controllers/notificationController.js:47
+    `sendEmailNotification(user.email, template)` // missing await
+    -- Code issue: Email is not awaited before response is sent. Errors in email dispatch are silently lost.
+
+[2024-06-10 10:09:30] [ERROR] TypeError: Cannot read properties of undefined (reading 'data')
+    at src/services/reportService.js:83
+    -- Root cause: `await Promise.race([fetchReport(), timeoutPromise(5000)])` resolved with timeout sentinel but caller assumed it always resolves with report object.
+    -- Architectural issue: Promise.race timeout pattern used without checking which promise resolved.
+
+[2024-06-10 10:13:05] [WARN]  Sequential awaits inside loop — extreme performance bottleneck detected.
+    at src/batch/invoiceProcessor.js:34
+    ```
+    for (const invoice of invoices) {
+        await processInvoice(invoice);  // each call waits for the previous
+    }
+    ```
+    -- 350 invoices processed one-by-one. Total time: 42 seconds.
+    -- Fix: Use `await Promise.all(invoices.map(processInvoice))` or process in controlled batches with `p-limit`.
+
+[2024-06-10 10:17:22] [ERROR] Callback hell anti-pattern causing buried error handling.
+    at src/legacy/userImport.js:120-195
+    -- 6 levels of nested callbacks. Inner-most error callback never reached on outer failure.
+    -- Architectural issue: Pyramid of doom. Errors in levels 1-3 do not propagate to level 6. Must refactor to async/await with centralized try/catch.
+
+[2024-06-10 10:21:00] [WARN]  setTimeout used as a workaround for race condition.
+    at src/components/DataGrid.js:66
+    `setTimeout(() => setState({ loaded: true }), 500)`
+    -- Architectural issue: Hardcoded delay assumes data fetch completes within 500ms. Will fail under load. Root race condition not actually fixed — only hidden.
+
+[2024-06-10 10:25:40] [ERROR] setInterval not cleared on component unmount — interval fires after component is destroyed.
+    at src/components/LiveTicker.js:38
+    -- Root cause: `setInterval` stored in local variable, not in a ref or state. Cleanup function in useEffect not returning `clearInterval`. Causes memory leak and setState-on-unmounted-component warning.
+
+[2024-06-10 10:30:00] [CRITICAL] Deadlock-like stall: two async functions awaiting each other through event emitter.
+    serviceA.js:55 emits 'data:ready' → triggers serviceB.processData() which awaits serviceA.getMetadata()
+    serviceA.getMetadata() is blocked waiting for serviceB to emit 'meta:ready'
+    -- Architectural issue: Circular async dependency through event bus. Neither service can proceed. Application hangs indefinitely.

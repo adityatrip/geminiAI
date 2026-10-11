@@ -1,0 +1,46 @@
+[2024-06-10 11:00:00] [WARN]  Table `user_data` has no primary key defined.
+    -- Architectural issue: Without a primary key, InnoDB creates a hidden 6-byte row ID. JOINs, replication, and ORM frameworks behave unpredictably. Every table must have an explicit PRIMARY KEY.
+
+[2024-06-10 11:03:15] [WARN]  Column `user_data.settings` defined as TEXT storing serialized JSON.
+    CREATE TABLE user_data ( ..., settings TEXT, ... )
+    -- Architectural issue: Application is stuffing multiple attributes into one TEXT column as JSON blob.
+    -- No ability to query individual settings with indexes. Violates First Normal Form (1NF).
+    -- Fix: Normalize into a key-value table or use MySQL's native JSON column type with generated columns for indexed fields.
+
+[2024-06-10 11:06:40] [ERROR] Migration script failed: Column 'email' cannot be NOT NULL without a DEFAULT value when table is non-empty.
+    ALTER TABLE users MODIFY COLUMN email VARCHAR(255) NOT NULL;
+    -- Root cause: Migration did not backfill NULL values before adding NOT NULL constraint. Running on live table with existing NULL rows.
+    -- Code issue: Migration scripts not tested against a production-like dataset before deployment.
+
+[2024-06-10 11:10:02] [WARN]  Detected VARCHAR(255) used for all string columns regardless of content.
+    Columns: users.country_code, users.currency, products.status, orders.payment_method
+    -- Architectural issue: All string columns are VARCHAR(255). country_code should be CHAR(2), currency CHAR(3), status/payment_method should be ENUM or a lookup table.
+    -- Wastes storage and loses domain validation at the database level.
+
+[2024-06-10 11:13:28] [WARN]  Table `events` growing at 800K rows/day with no partitioning or archival strategy.
+    Current row count: 241,000,000 — Table size: 58 GB
+    -- Architectural issue: Single monolithic table with no PARTITION BY RANGE on event_date. Queries against recent events scan the entire table.
+    -- Fix: Implement RANGE partitioning by month and archive/drop old partitions.
+
+[2024-06-10 11:17:55] [ERROR] Circular foreign key reference detected.
+    `table_a.ref_b` → `table_b(id)` and `table_b.ref_a` → `table_a(id)`
+    -- Architectural issue: Bidirectional FK creates circular dependency. Neither row can be inserted first without violating a constraint.
+    -- Fix: Introduce a junction/association table to break the cycle, or defer one FK to nullable.
+
+[2024-06-10 11:21:10] [WARN]  All datetime columns stored as VARCHAR instead of DATETIME/TIMESTAMP.
+    Columns: orders.created_at, sessions.expires_at, logs.recorded_at
+    -- Code issue: Dates stored as strings like '10-06-2024 11:00'. No timezone consistency. 
+    -- Sorting, range queries, and date arithmetic all fail or require CAST. Indexes on these columns are useless for range scans.
+
+[2024-06-10 11:24:44] [WARN]  `products` table contains 18 nullable columns that are only used by specific product types.
+    -- Architectural issue: Single-table inheritance (STI) being abused. All product type variants crammed into one table.
+    -- Fix: Use Class Table Inheritance — a base `products` table with type-specific child tables (`physical_products`, `digital_products`, etc.).
+
+[2024-06-10 11:28:30] [ERROR] DROP TABLE executed without transaction or backup in migration 0047_cleanup.sql.
+    DROP TABLE legacy_accounts;
+    -- Code issue: Destructive DDL statement with no preceding data backup or conditional check (IF EXISTS).
+    -- No rollback possible. Migration is irreversible as written.
+
+[2024-06-10 11:33:00] [CRITICAL] Replication lag spiking to 90+ seconds on replica.
+    -- Root cause: Schema mismatch between primary and replica — column `price` is DECIMAL(10,2) on primary, FLOAT on replica.
+    -- Architectural issue: Schema migrations were applied manually to primary without running on replica. No automated migration orchestration in place.
